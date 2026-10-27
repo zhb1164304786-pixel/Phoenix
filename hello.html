@@ -66,6 +66,37 @@
     margin: 0;
   }
 
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .music {
+    font: inherit;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .music:hover { border-color: var(--accent); }
+  .music:focus-visible { outline: 3px solid var(--cursor); outline-offset: 2px; }
+  .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .bars i { width: 3px; height: 35%; background: var(--accent); border-radius: 1px; }
+  .bars i:nth-child(2) { height: 70%; }
+  .bars i:nth-child(3) { height: 50%; }
+  .music[aria-pressed="true"] .bars i { animation: bounce 0.9s ease-in-out infinite; }
+  .music[aria-pressed="true"] .bars i:nth-child(2) { animation-delay: -0.3s; }
+  .music[aria-pressed="true"] .bars i:nth-child(3) { animation-delay: -0.6s; }
+  @keyframes bounce { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
   .greet {
     font-family: var(--display);
     font-weight: 800;
@@ -178,11 +209,18 @@
   @media (prefers-reduced-motion: reduce) {
     .cursor { animation: none; }
     .chip { transition: none; }
+    .music[aria-pressed="true"] .bars i { animation: none; }
   }
 </style>
 
 <main>
-  <p class="eyebrow">Phoenix · 我的第一个网页</p>
+  <div class="top">
+    <p class="eyebrow">Phoenix · 我的第一个网页</p>
+    <button class="music" id="music" type="button" aria-pressed="false" hidden>
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span id="music-label">播放音乐</span>
+    </button>
+  </div>
 
   <h1 class="greet" aria-hidden="true"><span id="text">Hello, World!</span><span class="cursor"></span></h1>
   <p class="sr-only" id="live" aria-live="polite">Hello, World!</p>
@@ -285,4 +323,92 @@
   });
 
   nameEl.addEventListener("input", () => show(false));
+
+  // 背景音乐：用浏览器自带的 Web Audio 现场合成一段八音盒小曲（C - G - Am - F 循环）
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const musicBtn = document.getElementById("music");
+  const musicLabel = document.getElementById("music-label");
+  const CHORDS = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+  const ARP = [0, 1, 2, 3, 2, 1, 2, 1];
+  const STEP = 60 / 92 / 2;
+
+  let audio = null;
+  let master = null;
+  let musicTimer = null;
+  let nextTime = 0;
+  let step = 0;
+  let musicOn = false;
+
+  function tone(midi, t, dur, type, level) {
+    const osc = audio.createOscillator();
+    const env = audio.createGain();
+    osc.type = type;
+    osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(level, t + 0.015);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(env).connect(master);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  function playStep(s, t) {
+    const chord = CHORDS[Math.floor(s / 8)];
+    const notes = [...chord, chord[0] + 12];
+    const n = notes[ARP[s % 8]];
+    tone(n + 12, t, 0.9, "sine", 0.22);
+    tone(n + 24, t, 0.35, "triangle", 0.03);
+    if (s % 4 === 0) tone(chord[0] - 12, t, STEP * 3.5, "triangle", 0.18);
+  }
+
+  function schedule() {
+    while (nextTime < audio.currentTime + 0.15) {
+      playStep(step, nextTime);
+      nextTime += STEP;
+      step = (step + 1) % 32;
+    }
+  }
+
+  function startMusic() {
+    if (!audio) {
+      audio = new AudioCtx();
+      master = audio.createGain();
+      master.gain.value = 0;
+      master.connect(audio.destination);
+    }
+    audio.resume();
+    const now = audio.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.linearRampToValueAtTime(0.35, now + 0.6);
+    nextTime = now + 0.05;
+    clearInterval(musicTimer);
+    musicTimer = setInterval(schedule, 25);
+    schedule();
+  }
+
+  function stopMusic() {
+    clearInterval(musicTimer);
+    if (!audio) return;
+    const now = audio.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.linearRampToValueAtTime(0, now + 0.4);
+  }
+
+  function setMusic(on) {
+    musicOn = on;
+    musicBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    musicLabel.textContent = on ? "暂停音乐" : "播放音乐";
+    if (on) startMusic(); else stopMusic();
+  }
+
+  if (AudioCtx) {
+    musicBtn.hidden = false;
+    musicBtn.addEventListener("click", () => setMusic(!musicOn));
+    document.addEventListener("visibilitychange", () => {
+      if (!musicOn) return;
+      if (document.hidden) stopMusic(); else startMusic();
+    });
+  }
 </script>
