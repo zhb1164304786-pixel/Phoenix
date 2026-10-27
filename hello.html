@@ -1,0 +1,414 @@
+<title>Phoenix Hello World</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: one left-aligned column: giant typed greeting, language chips + name box, then the matching line of Python */
+  :root {
+    --bg: #EEF2FA;
+    --surface: #FFFFFF;
+    --ink: #16213B;
+    --muted: #5A6684;
+    --line: #CDD6EA;
+    --accent: #2F55E0;
+    --accent-ink: #FFFFFF;
+    --cursor: #F2A900;
+    --code-bg: #16213B;
+    --code-ink: #E7ECF8;
+    --code-str: #FFC94D;
+    --code-fn: #8FB0FF;
+    --code-com: #8C9BBE;
+
+    --display: "Bricolage Grotesque", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    --body: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1424; --surface: #172038; --ink: #E6ECF8; --muted: #9AA7C4; --line: #2C3958;
+      --accent: #7C9BFF; --accent-ink: #0E1424; --cursor: #FFC94D;
+      --code-bg: #070B16; --code-ink: #E6ECF8; --code-str: #FFC94D; --code-fn: #8FB0FF; --code-com: #6F7FA3;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1424; --surface: #172038; --ink: #E6ECF8; --muted: #9AA7C4; --line: #2C3958;
+    --accent: #7C9BFF; --accent-ink: #0E1424; --cursor: #FFC94D;
+    --code-bg: #070B16; --code-ink: #E6ECF8; --code-str: #FFC94D; --code-fn: #8FB0FF; --code-com: #6F7FA3;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    padding-block: clamp(32px, 8vh, 88px);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(28px, 5vw, 44px);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .music {
+    font: inherit;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .music:hover { border-color: var(--accent); }
+  .music:focus-visible { outline: 3px solid var(--cursor); outline-offset: 2px; }
+  .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .bars i { width: 3px; height: 35%; background: var(--accent); border-radius: 1px; }
+  .bars i:nth-child(2) { height: 70%; }
+  .bars i:nth-child(3) { height: 50%; }
+  .music[aria-pressed="true"] .bars i { animation: bounce 0.9s ease-in-out infinite; }
+  .music[aria-pressed="true"] .bars i:nth-child(2) { animation-delay: -0.3s; }
+  .music[aria-pressed="true"] .bars i:nth-child(3) { animation-delay: -0.6s; }
+  @keyframes bounce { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+
+  .greet {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(44px, 11vw, 108px);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 0;
+    min-height: 2.1em;
+    overflow-wrap: anywhere;
+  }
+  .cursor {
+    display: inline-block;
+    width: 0.09em;
+    height: 0.82em;
+    margin-left: 0.06em;
+    background: var(--cursor);
+    vertical-align: -0.06em;
+    animation: blink 1.05s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .panel-label {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    font: inherit;
+    font-size: 15px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .name-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 360px;
+  }
+  .name-field input {
+    font: inherit;
+    font-size: 17px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .name-field input::placeholder { color: var(--muted); }
+
+  .chip:focus-visible,
+  .name-field input:focus-visible {
+    outline: 3px solid var(--cursor);
+    outline-offset: 2px;
+  }
+
+  figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  figcaption { font-size: 14px; color: var(--muted); }
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .c-com { color: var(--code-com); }
+  .c-fn { color: var(--code-fn); font-weight: 600; }
+  .c-str { color: var(--code-str); }
+
+  .story {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .story strong { color: var(--ink); font-weight: 600; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+    .chip { transition: none; }
+    .music[aria-pressed="true"] .bars i { animation: none; }
+  }
+</style>
+
+<main>
+  <div class="top">
+    <p class="eyebrow">Phoenix · 我的第一个网页</p>
+    <button class="music" id="music" type="button" aria-pressed="false" hidden>
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span id="music-label">播放音乐</span>
+    </button>
+  </div>
+
+  <h1 class="greet" aria-hidden="true"><span id="text">Hello, World!</span><span class="cursor"></span></h1>
+  <p class="sr-only" id="live" aria-live="polite">Hello, World!</p>
+
+  <section class="panel">
+    <p class="panel-label">换一种语言说你好</p>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="panel">
+    <div class="name-field">
+      <label class="panel-label" for="name">把"世界"换成你的名字</label>
+      <input id="name" type="text" maxlength="20" placeholder="比如：小明" autocomplete="off">
+    </div>
+  </section>
+
+  <figure>
+    <figcaption>用 Python 写出来，就是这一行（和你仓库里的 hello.py 一样）：</figcaption>
+    <pre><code><span class="c-com"># 运行它，屏幕上就会出现这句话</span>
+<span class="c-fn">print</span>(<span class="c-str" id="code-str">"Hello, World!"</span>)</code></pre>
+  </figure>
+
+  <p class="story">
+    <strong>为什么是 Hello World？</strong>
+    1978 年出版的《C 程序设计语言》用一个打印 hello, world 的小程序当第一个例子。
+    从那以后，几乎每个人学编程写下的第一行代码，都是跟世界打个招呼。
+  </p>
+</main>
+
+<script>
+  const LANGS = [
+    { label: "English",   code: "en", world: "Hello, World!",       named: "Hello, {n}!" },
+    { label: "中文",       code: "zh", world: "你好，世界！",          named: "你好，{n}！" },
+    { label: "日本語",     code: "ja", world: "こんにちは、世界！",      named: "こんにちは、{n}さん！" },
+    { label: "한국어",     code: "ko", world: "안녕, 세상아!",          named: "안녕, {n}!" },
+    { label: "Français",  code: "fr", world: "Bonjour le monde !",   named: "Bonjour, {n} !" },
+    { label: "Español",   code: "es", world: "¡Hola, mundo!",        named: "¡Hola, {n}!" },
+    { label: "Deutsch",   code: "de", world: "Hallo, Welt!",         named: "Hallo, {n}!" },
+    { label: "Italiano",  code: "it", world: "Ciao, mondo!",         named: "Ciao, {n}!" },
+    { label: "Русский",   code: "ru", world: "Привет, мир!",         named: "Привет, {n}!" },
+    { label: "Português", code: "pt", world: "Olá, mundo!",          named: "Olá, {n}!" },
+  ];
+
+  const textEl = document.getElementById("text");
+  const liveEl = document.getElementById("live");
+  const codeEl = document.getElementById("code-str");
+  const chipsEl = document.getElementById("chips");
+  const nameEl = document.getElementById("name");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let current = 0;
+  let timer = null;
+
+  function phrase() {
+    const lang = LANGS[current];
+    const name = nameEl.value.trim();
+    return name ? lang.named.replace("{n}", name) : lang.world;
+  }
+
+  function pythonString(s) {
+    return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+  }
+
+  function show(animate) {
+    const s = phrase();
+    textEl.parentElement.lang = LANGS[current].code;
+    liveEl.textContent = s;
+    codeEl.textContent = pythonString(s);
+
+    clearInterval(timer);
+    if (!animate || reduceMotion) {
+      textEl.textContent = s;
+      return;
+    }
+    const chars = Array.from(s);
+    let i = 0;
+    textEl.textContent = "";
+    timer = setInterval(() => {
+      i += 1;
+      textEl.textContent = chars.slice(0, i).join("");
+      if (i >= chars.length) clearInterval(timer);
+    }, 60);
+  }
+
+  LANGS.forEach((lang, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.id = "lang-" + lang.code;
+    b.lang = lang.code;
+    b.textContent = lang.label;
+    b.setAttribute("aria-pressed", i === current ? "true" : "false");
+    b.addEventListener("click", () => {
+      current = i;
+      chipsEl.querySelectorAll(".chip").forEach((c, j) =>
+        c.setAttribute("aria-pressed", j === current ? "true" : "false"));
+      show(true);
+    });
+    chipsEl.appendChild(b);
+  });
+
+  nameEl.addEventListener("input", () => show(false));
+
+  // 背景音乐：用浏览器自带的 Web Audio 现场合成一段八音盒小曲（C - G - Am - F 循环）
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const musicBtn = document.getElementById("music");
+  const musicLabel = document.getElementById("music-label");
+  const CHORDS = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
+  const ARP = [0, 1, 2, 3, 2, 1, 2, 1];
+  const STEP = 60 / 92 / 2;
+
+  let audio = null;
+  let master = null;
+  let musicTimer = null;
+  let nextTime = 0;
+  let step = 0;
+  let musicOn = false;
+
+  function tone(midi, t, dur, type, level) {
+    const osc = audio.createOscillator();
+    const env = audio.createGain();
+    osc.type = type;
+    osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(level, t + 0.015);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(env).connect(master);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  function playStep(s, t) {
+    const chord = CHORDS[Math.floor(s / 8)];
+    const notes = [...chord, chord[0] + 12];
+    const n = notes[ARP[s % 8]];
+    tone(n + 12, t, 0.9, "sine", 0.22);
+    tone(n + 24, t, 0.35, "triangle", 0.03);
+    if (s % 4 === 0) tone(chord[0] - 12, t, STEP * 3.5, "triangle", 0.18);
+  }
+
+  function schedule() {
+    while (nextTime < audio.currentTime + 0.15) {
+      playStep(step, nextTime);
+      nextTime += STEP;
+      step = (step + 1) % 32;
+    }
+  }
+
+  function startMusic() {
+    if (!audio) {
+      audio = new AudioCtx();
+      master = audio.createGain();
+      master.gain.value = 0;
+      master.connect(audio.destination);
+    }
+    audio.resume();
+    const now = audio.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.linearRampToValueAtTime(0.35, now + 0.6);
+    nextTime = now + 0.05;
+    clearInterval(musicTimer);
+    musicTimer = setInterval(schedule, 25);
+    schedule();
+  }
+
+  function stopMusic() {
+    clearInterval(musicTimer);
+    if (!audio) return;
+    const now = audio.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value, now);
+    master.gain.linearRampToValueAtTime(0, now + 0.4);
+  }
+
+  function setMusic(on) {
+    musicOn = on;
+    musicBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    musicLabel.textContent = on ? "暂停音乐" : "播放音乐";
+    if (on) startMusic(); else stopMusic();
+  }
+
+  if (AudioCtx) {
+    musicBtn.hidden = false;
+    musicBtn.addEventListener("click", () => setMusic(!musicOn));
+    document.addEventListener("visibilitychange", () => {
+      if (!musicOn) return;
+      if (document.hidden) stopMusic(); else startMusic();
+    });
+  }
+</script>
